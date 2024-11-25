@@ -2,8 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import * as turf from '@turf/turf';
-import { FaSearch, FaDownload, FaUserCircle } from 'react-icons/fa';
-import Link from 'next/link';
+import { FaSearch, FaDownload, FaUserCircle, FaCogs } from 'react-icons/fa';
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 
@@ -19,10 +18,13 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
     const [searchMode, setSearchMode] = useState('Exact');
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [showDownloadOptions, setShowDownloadOptions] = useState(false);
+    const [showServicesMenu, setShowServicesMenu] = useState(false);
+    const [showProfileMenu, setShowProfileMenu] = useState(false);
     const debounceTimeout = useRef(null);
     const [clickedButton, setClickedButton] = useState(null);
     const [hoveredButton, setHoveredButton] = useState(null);
-    const [showProfileMenu, setShowProfileMenu] = useState(false); 
+    const [isServicesHovered, setIsServicesHovered] = useState(false);
+    const [hoveredService, setHoveredService] = useState(null);
 
     // Helper function to format species name for SQL
     const formatSpeciesForSQL = (name) => {
@@ -35,17 +37,18 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
         return name.replace(/\s+/g, '_');
     };
 
+    // Close other menus when one is opened
     useEffect(() => {
         if (showDownloadOptions && showProfileMenu) {
             setShowProfileMenu(false);
         }
-    }, [showDownloadOptions]);
-
-    useEffect(() => {
-        if (showProfileMenu && showDownloadOptions) {
-            setShowDownloadOptions(false);
+        if (showDownloadOptions && showServicesMenu) {
+            setShowServicesMenu(false);
         }
-    }, [showProfileMenu]);
+        if (showProfileMenu && showServicesMenu) {
+            setShowServicesMenu(false);
+        }
+    }, [showDownloadOptions, showProfileMenu, showServicesMenu]);
 
     // Debounced fetch for suggestions
     const fetchSuggestions = (value) => {
@@ -103,7 +106,7 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
                 source: 'speciesRange',
                 layout: {},
                 paint: {
-                    'fill-color': 'rgba(34, 139, 34, 0.5)', // Forest green color
+                    'fill-color': 'rgba(34, 139, 34, 0.5)',
                     'fill-opacity': opacitySettings && opacitySettings['Range'] ? opacitySettings['Range'] : 0.5,
                 },
             });
@@ -130,7 +133,6 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
             const data = await res.json();
             if (data.length === 0) {
                 console.log('No observations found for the species:', species);
-                // Remove the observations layer and source if they exist
                 if (map.current.getSource('observations')) {
                     if (map.current.getLayer('observationsLayer')) {
                         map.current.removeLayer('observationsLayer');
@@ -152,7 +154,6 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
                 type: 'FeatureCollection',
                 features: features,
             };
-            // Remove existing source and layer if they exist
             if (map.current.getSource('observations')) {
                 if (map.current.getLayer('observationsLayer')) {
                     map.current.removeLayer('observationsLayer');
@@ -169,8 +170,8 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
                 source: 'observations',
                 layout: {},
                 paint: {
-                    'circle-radius': 4, 
-                    'circle-color': '#ff4500', 
+                    'circle-radius': 4,
+                    'circle-color': '#ff4500',
                     'circle-stroke-color': '#ffffff',
                     'circle-opacity':
                         opacitySettings && opacitySettings['Observations'] ? opacitySettings['Observations'] : 0.8,
@@ -206,7 +207,6 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
 
     // Function to re-add layers and settings after style change
     const reAddLayersAndSettings = () => {
-        // Get label layer IDs
         const { countryLabels, otherLabels } = getLabelLayerIDs(map.current);
         countryLabelLayerIDs.current = countryLabels;
         otherLabelLayerIDs.current = otherLabels;
@@ -261,7 +261,7 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
                 source: 'observations',
                 layout: {},
                 paint: {
-                    'circle-radius': 4, // Ensure the reduced radius is maintained
+                    'circle-radius': 4,
                     'circle-color': '#ff4500',
                     'circle-stroke-color': '#ffffff',
                     'circle-opacity':
@@ -296,14 +296,11 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
             fetchSpeciesObservations('Pinus ponderosa');
         });
 
-        // Add zoom and compass controls (vertical arrangement by default)
         const nav = new mapboxgl.NavigationControl({ showCompass: true });
         map.current.addControl(nav, 'bottom-right');
 
-        // Add the watermark control to the map (bien.png)
         map.current.addControl(addWatermarkControl(), 'bottom-right');
 
-        // Add the left corner logos (nceas.png, uoa.png, nsf.png)
         map.current.addControl(addLeftLogosControl(), 'bottom-left');
 
         // Add custom reset button
@@ -415,7 +412,7 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
         const leftLogosContainer = document.createElement('div');
         leftLogosContainer.className = 'mapboxgl-ctrl mapboxgl-ctrl-left-logos';
         leftLogosContainer.style.display = 'flex';
-        leftLogosContainer.style.flexDirection = 'row'; 
+        leftLogosContainer.style.flexDirection = 'row';
         leftLogosContainer.style.alignItems = 'center';
         leftLogosContainer.style.justifyContent = 'space-between';
         leftLogosContainer.style.margin = '10px';
@@ -561,9 +558,35 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
     // Handle download options toggle
     const handleDownloadClick = () => {
         if (showDownloadOptions) {
+            setShowDownloadOptions(false);
             setClickedButton(null);
+        } else {
+            setShowDownloadOptions(true);
+            setShowServicesMenu(false);
+            setShowProfileMenu(false);
         }
-        setShowDownloadOptions(!showDownloadOptions);
+    };
+
+    // Handle services menu toggle
+    const handleServicesClick = () => {
+        if (showServicesMenu) {
+            setShowServicesMenu(false);
+        } else {
+            setShowServicesMenu(true);
+            setShowDownloadOptions(false);
+            setShowProfileMenu(false);
+        }
+    };
+
+    // Handle profile menu toggle
+    const handleProfileClick = () => {
+        if (showProfileMenu) {
+            setShowProfileMenu(false);
+        } else {
+            setShowProfileMenu(true);
+            setShowDownloadOptions(false);
+            setShowServicesMenu(false);
+        }
     };
 
     // Handle download functions
@@ -592,6 +615,11 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
     // Handle mouse enter and leave for download buttons
     const handleMouseEnter = (buttonName) => setHoveredButton(buttonName);
     const handleMouseLeave = () => setHoveredButton(null);
+
+    // Handle service link click
+    const handleServiceLinkClick = (url) => {
+        window.open(url, '_blank');
+    };
 
     return (
         <div style={styles.mapContainer}>
@@ -633,7 +661,15 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
                         </div>
                         {/* Download icon and menu */}
                         <div style={styles.iconWrapper}>
-                            <FaDownload style={styles.downloadIcon} onClick={handleDownloadClick} />
+                            <FaDownload
+                                style={{
+                                    ...styles.downloadIcon,
+                                    color: hoveredButton === 'download' ? '#228B22' : '#888',
+                                }}
+                                onClick={handleDownloadClick}
+                                onMouseEnter={() => setHoveredButton('download')}
+                                onMouseLeave={handleMouseLeave}
+                            />
                             {showDownloadOptions && (
                                 <div style={styles.downloadOptionsContainer}>
                                     <button
@@ -645,7 +681,7 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
                                                     : '#228B22',
                                         }}
                                         onClick={() => handleDownloadButtonClick('observations')}
-                                        onMouseEnter={() => handleMouseEnter('observations')}
+                                        onMouseEnter={() => setHoveredButton('observations')}
                                         onMouseLeave={handleMouseLeave}
                                     >
                                         Download Observations
@@ -659,7 +695,7 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
                                                     : '#228B22',
                                         }}
                                         onClick={() => handleDownloadButtonClick('traits')}
-                                        onMouseEnter={() => handleMouseEnter('traits')}
+                                        onMouseEnter={() => setHoveredButton('traits')}
                                         onMouseLeave={handleMouseLeave}
                                     >
                                         Download Traits
@@ -673,7 +709,7 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
                                                     : '#228B22',
                                         }}
                                         onClick={() => handleDownloadButtonClick('rangeshape')}
-                                        onMouseEnter={() => handleMouseEnter('rangeshape')}
+                                        onMouseEnter={() => setHoveredButton('rangeshape')}
                                         onMouseLeave={handleMouseLeave}
                                     >
                                         Download Range Shapefile
@@ -683,11 +719,76 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
                                 </div>
                             )}
                         </div>
+                        {/* Services icon and menu */}
+                        <div style={styles.iconWrapper}>
+                            <FaCogs
+                                style={{
+                                    ...styles.servicesIcon,
+                                    color: isServicesHovered ? '#228B22' : '#888',
+                                }}
+                                onClick={handleServicesClick}
+                                onMouseEnter={() => setIsServicesHovered(true)}
+                                onMouseLeave={() => setIsServicesHovered(false)}
+                            />
+                            {showServicesMenu && (
+                                <div style={styles.servicesMenu}>
+                                    <button
+                                        style={{
+                                            ...styles.servicesMenuItem,
+                                            backgroundColor: hoveredService === 'taxonomic' ? '#f0f0f0' : 'transparent',
+                                        }}
+                                        onClick={() => handleServiceLinkClick('https://tnrs.biendata.org')}
+                                        onMouseEnter={() => setHoveredService('taxonomic')}
+                                        onMouseLeave={() => setHoveredService(null)}
+                                    >
+                                        Taxonomic Name Resolution Service
+                                    </button>
+                                    <button
+                                        style={{
+                                            ...styles.servicesMenuItem,
+                                            backgroundColor: hoveredService === 'geographic' ? '#f0f0f0' : 'transparent',
+                                        }}
+                                        onClick={() => handleServiceLinkClick('https://gnrs.biendata.org')}
+                                        onMouseEnter={() => setHoveredService('geographic')}
+                                        onMouseLeave={() => setHoveredService(null)}
+                                    >
+                                        Geographic Name Resolution Service
+                                    </button>
+                                    <button
+                                        style={{
+                                            ...styles.servicesMenuItem,
+                                            backgroundColor: hoveredService === 'native' ? '#f0f0f0' : 'transparent',
+                                        }}
+                                        onClick={() => handleServiceLinkClick('https://nsr.biendata.org')}
+                                        onMouseEnter={() => setHoveredService('native')}
+                                        onMouseLeave={() => setHoveredService(null)}
+                                    >
+                                        Native Species Resolver
+                                    </button>
+                                    <button
+                                        style={{
+                                            ...styles.servicesMenuItem,
+                                            backgroundColor: hoveredService === 'geocoordinate' ? '#f0f0f0' : 'transparent',
+                                        }}
+                                        onClick={() => handleServiceLinkClick('https://gvs.biendata.org')}
+                                        onMouseEnter={() => setHoveredService('geocoordinate')}
+                                        onMouseLeave={() => setHoveredService(null)}
+                                    >
+                                        Geocoordinate Validation Service
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                         {/* Profile icon and menu */}
                         <div style={styles.iconWrapper}>
                             <FaUserCircle
-                                style={styles.profileIcon}
-                                onClick={() => setShowProfileMenu(!showProfileMenu)}
+                                style={{
+                                    ...styles.profileIcon,
+                                    color: hoveredButton === 'profile' ? '#228B22' : '#888',
+                                }}
+                                onClick={handleProfileClick}
+                                onMouseEnter={() => setHoveredButton('profile')}
+                                onMouseLeave={handleMouseLeave}
                             />
                             {showProfileMenu && (
                                 <div style={styles.profileMenu}>
@@ -817,12 +918,21 @@ const styles = {
         color: '#888',
         cursor: 'pointer',
         flexShrink: 0,
+        transition: 'color 0.3s ease',
+    },
+    servicesIcon: {
+        fontSize: '22px',
+        color: '#888',
+        cursor: 'pointer',
+        flexShrink: 0,
+        transition: 'color 0.3s ease',
     },
     profileIcon: {
         fontSize: '28px',
         color: '#888',
         cursor: 'pointer',
         flexShrink: 0,
+        transition: 'color 0.3s ease',
     },
     profileMenu: {
         position: 'absolute',
@@ -835,7 +945,7 @@ const styles = {
         display: 'flex',
         flexDirection: 'column',
         padding: '10px',
-        width: '200px', 
+        width: '200px',
         fontFamily: 'Arial, sans-serif',
     },
     profileMenuItem: {
@@ -849,7 +959,7 @@ const styles = {
     },
     suggestionsList: {
         position: 'absolute',
-        top: '110%', 
+        top: '110%',
         left: '0',
         right: '0',
         zIndex: 3,
@@ -881,7 +991,7 @@ const styles = {
         display: 'flex',
         flexDirection: 'column',
         fontFamily: 'Arial, sans-serif',
-        width: '200px', 
+        width: '200px',
     },
     downloadOptionButton: {
         padding: '10px',
@@ -889,7 +999,7 @@ const styles = {
         border: 'none',
         cursor: 'pointer',
         borderRadius: '5px',
-        backgroundColor: '#228B22', 
+        backgroundColor: '#228B22',
         color: '#fff',
         fontSize: '14px',
         transition: 'background-color 0.3s ease',
@@ -904,7 +1014,33 @@ const styles = {
         fontStyle: 'italic',
         fontFamily: 'Arial, sans-serif',
     },
-    // Add media queries for mobile responsiveness
+    servicesMenu: {
+        position: 'absolute',
+        top: '40px',
+        right: '0',
+        zIndex: 3,
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        padding: '10px',
+        borderRadius: '10px',
+        boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
+        display: 'flex',
+        flexDirection: 'column',
+        fontFamily: 'Arial, sans-serif',
+        width: '250px',
+    },
+    servicesMenuItem: {
+        padding: '10px 15px',
+        marginBottom: '5px',
+        border: 'none',
+        backgroundColor: 'transparent',
+        textAlign: 'left',
+        cursor: 'pointer',
+        color: '#333',
+        fontSize: '14px',
+        fontFamily: 'Arial, sans-serif',
+        borderRadius: '5px',
+        transition: 'background-color 0.3s ease',
+    },
     '@media (max-width: 768px)': {
         searchContainer: {
             top: '10px',
@@ -928,14 +1064,20 @@ const styles = {
         downloadIcon: {
             fontSize: '20px',
         },
+        servicesIcon: {
+            fontSize: '20px',
+        },
         profileIcon: {
             fontSize: '24px',
         },
         profileMenu: {
-            width: '200px', 
+            width: '200px',
         },
         downloadOptionsContainer: {
-            width: '200px', 
+            width: '200px',
+        },
+        servicesMenu: {
+            width: '220px',
         },
     },
 };
