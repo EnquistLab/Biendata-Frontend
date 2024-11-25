@@ -50,7 +50,6 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
         }
     }, [showDownloadOptions, showProfileMenu, showServicesMenu]);
 
-    // Debounced fetch for suggestions
     const fetchSuggestions = (value) => {
         if (debounceTimeout.current) {
             clearTimeout(debounceTimeout.current);
