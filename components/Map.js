@@ -22,7 +22,7 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
     const debounceTimeout = useRef(null);
     const [clickedButton, setClickedButton] = useState(null);
     const [hoveredButton, setHoveredButton] = useState(null);
-    const [showProfileMenu, setShowProfileMenu] = useState(false); // State for profile menu
+    const [showProfileMenu, setShowProfileMenu] = useState(false); 
 
     // Helper function to format species name for SQL
     const formatSpeciesForSQL = (name) => {
@@ -159,20 +159,18 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
                 }
                 map.current.removeSource('observations');
             }
-            // Add the new source
             map.current.addSource('observations', {
                 type: 'geojson',
                 data: geojsonData,
             });
-            // Add the layer with reduced circle-radius
             map.current.addLayer({
                 id: 'observationsLayer',
                 type: 'circle',
                 source: 'observations',
                 layout: {},
                 paint: {
-                    'circle-radius': 4, // Reduced radius from 6 to 4
-                    'circle-color': '#ff4500', // OrangeRed color
+                    'circle-radius': 4, 
+                    'circle-color': '#ff4500', 
                     'circle-stroke-color': '#ffffff',
                     'circle-opacity':
                         opacitySettings && opacitySettings['Observations'] ? opacitySettings['Observations'] : 0.8,
@@ -417,7 +415,7 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
         const leftLogosContainer = document.createElement('div');
         leftLogosContainer.className = 'mapboxgl-ctrl mapboxgl-ctrl-left-logos';
         leftLogosContainer.style.display = 'flex';
-        leftLogosContainer.style.flexDirection = 'row'; // Align logos side by side
+        leftLogosContainer.style.flexDirection = 'row'; 
         leftLogosContainer.style.alignItems = 'center';
         leftLogosContainer.style.justifyContent = 'space-between';
         leftLogosContainer.style.margin = '10px';
@@ -837,7 +835,7 @@ const styles = {
         display: 'flex',
         flexDirection: 'column',
         padding: '10px',
-        width: '200px', // Ensured same width as downloadOptionsContainer
+        width: '200px', 
         fontFamily: 'Arial, sans-serif',
     },
     profileMenuItem: {
@@ -851,7 +849,7 @@ const styles = {
     },
     suggestionsList: {
         position: 'absolute',
-        top: '110%', // Aligns directly below the searchBox
+        top: '110%', 
         left: '0',
         right: '0',
         zIndex: 3,
@@ -883,7 +881,7 @@ const styles = {
         display: 'flex',
         flexDirection: 'column',
         fontFamily: 'Arial, sans-serif',
-        width: '200px', // Ensured same width as profileMenu
+        width: '200px', 
     },
     downloadOptionButton: {
         padding: '10px',
@@ -891,7 +889,7 @@ const styles = {
         border: 'none',
         cursor: 'pointer',
         borderRadius: '5px',
-        backgroundColor: '#228B22', // ForestGreen
+        backgroundColor: '#228B22', 
         color: '#fff',
         fontSize: '14px',
         transition: 'background-color 0.3s ease',
@@ -934,10 +932,10 @@ const styles = {
             fontSize: '24px',
         },
         profileMenu: {
-            width: '200px', // Same as downloadOptionsContainer
+            width: '200px', 
         },
         downloadOptionsContainer: {
-            width: '200px', // Same as profileMenu
+            width: '200px', 
         },
     },
 };
