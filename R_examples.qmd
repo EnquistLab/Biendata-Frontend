@@ -1,0 +1,96 @@
+
+# Using the API to retreive a species range as a zipped shapefile via R
+
+For this example, we'll use the species *Pinus arizonica*.  Note that when submitting to the API, the space between the Genus and specific epithet needs to be replaced with an underscore.
+
+```{r}
+
+# Load required packages
+
+library(httr)
+library(sf)
+
+# Create a temporary directory
+
+temp_dir <- tempdir()
+
+# Getting the ranges and metadata via a .zip file
+
+# Download the data from the API 
+
+  pinus_zip <- GET(url = "https://biendata.org/api/download/range?species=Pinus_arizonica") |>
+    
+  #convert to a manageable format  
+    
+              content(as = "raw")|> 
+    
+  # write to a zip file  
+    
+    writeBin(con = file.path(temp_dir,"pinus_arizonica.zip"))
+  
+  # Unzip the file
+  
+    unzip(zipfile = file.path(temp_dir,"pinus_arizonica.zip"),
+          exdir = temp_dir)
+
+  # list the files
+  
+    files <- list.files(temp_dir,full.names = TRUE,recursive = TRUE)
+
+  # read and plot file  
+    
+    sf::st_read(dsn = files[5]) |> plot()
+
+  # clean up
+  
+    unlink(temp_dir,recursive = TRUE,force = TRUE)
+  
+```  
+
+# Using the API to download a species range as well-known text in R
+
+In this example, we download the range for *Acer rubrum* in well-known text.  This approach can load the range directly into R without having to save an intermediate .zip file.
+
+```{r}
+
+library(httr)
+library(jsonlite)
+library(sf)
+
+  species <- "Acer rubrum"
+
+  # Fix the name for the API
+
+    species <- gsub(pattern = " ",
+                    replacement = "_",
+                    x = species)
+
+  #make the URL
+    
+    url <- paste0("https://biendata.org/api/range/range-data?species=", species)
+  
+  # Download the data from the API
+    
+    req <- GET(url = url)
+  
+  # convert to raw - this throws an error
+    
+    raw_content <- rawToChar(req$content)
+  
+  # convert raw content from JSON to R object
+    
+    df <- fromJSON(raw_content)
+  
+  # convert well-known text to sf geometry
+
+    sp_range <- st_as_sf(x = df,
+                         wkt = "st_astext",
+                         crs = "epsg:4326")
+          
+  # plot data
+    
+    plot(sp_range[1])
+
+
+```
+  
