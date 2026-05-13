@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import * as turf from '@turf/turf';
-import { FaSearch, FaDownload, FaUserCircle, FaCogs } from 'react-icons/fa';
+import { FaSearch, FaDownload, FaUserCircle, FaCogs, FaCompass } from 'react-icons/fa';
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 
@@ -25,6 +25,8 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
     const [hoveredButton, setHoveredButton] = useState(null);
     const [isServicesHovered, setIsServicesHovered] = useState(false);
     const [hoveredService, setHoveredService] = useState(null);
+    const [showExploreMenu, setShowExploreMenu] = useState(false);
+    const [hoveredExplore, setHoveredExplore] = useState(null);
 
     // Helper function to format species name for SQL
     const formatSpeciesForSQL = (name) => {
@@ -37,18 +39,6 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
         return name.replace(/\s+/g, '_');
     };
 
-    // Close other menus when one is opened
-    useEffect(() => {
-        if (showDownloadOptions && showProfileMenu) {
-            setShowProfileMenu(false);
-        }
-        if (showDownloadOptions && showServicesMenu) {
-            setShowServicesMenu(false);
-        }
-        if (showProfileMenu && showServicesMenu) {
-            setShowServicesMenu(false);
-        }
-    }, [showDownloadOptions, showProfileMenu, showServicesMenu]);
 
     const fetchSuggestions = (value) => {
         if (debounceTimeout.current) {
@@ -563,6 +553,7 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
             setShowDownloadOptions(true);
             setShowServicesMenu(false);
             setShowProfileMenu(false);
+            setShowExploreMenu(false);
         }
     };
 
@@ -573,6 +564,19 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
         } else {
             setShowServicesMenu(true);
             setShowDownloadOptions(false);
+            setShowProfileMenu(false);
+            setShowExploreMenu(false);
+        }
+    };
+
+    // Handle explore menu toggle
+    const handleExploreClick = () => {
+        if (showExploreMenu) {
+            setShowExploreMenu(false);
+        } else {
+            setShowExploreMenu(true);
+            setShowDownloadOptions(false);
+            setShowServicesMenu(false);
             setShowProfileMenu(false);
         }
     };
@@ -585,6 +589,7 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
             setShowProfileMenu(true);
             setShowDownloadOptions(false);
             setShowServicesMenu(false);
+            setShowExploreMenu(false);
         }
     };
 
@@ -715,6 +720,54 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
                                     </button>
                                     {/* Beta Version Text */}
                                     <div style={styles.betaVersionText}>(**Beta Version**)</div>
+                                </div>
+                            )}
+                        </div>
+                        {/* Explore icon and menu */}
+                        <div style={styles.iconWrapper}>
+                            <FaCompass
+                                aria-label="BIEN Explorer Apps"
+                                role="button"
+                                style={{
+                                    ...styles.exploreIcon,
+                                    color: hoveredButton === 'explore' ? '#6A5ACD' : '#228B22',
+                                }}
+                                onClick={handleExploreClick}
+                                onMouseEnter={() => setHoveredButton('explore')}
+                                onMouseLeave={handleMouseLeave}
+                            />
+                            {showExploreMenu && (
+                                <div style={styles.exploreMenu}>
+                                    <a
+                                        href="https://benquist.shinyapps.io/bien-species-shinyapp/"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{
+                                            ...styles.exploreMenuItem,
+                                            backgroundColor: hoveredExplore === 'species' ? '#f0fff0' : 'transparent',
+                                        }}
+                                        onMouseEnter={() => setHoveredExplore('species')}
+                                        onMouseLeave={() => setHoveredExplore(null)}
+                                    >
+                                        <div style={styles.exploreMenuItemLabel}>Species Explorer (Beta)</div>
+                                        <div style={styles.exploreMenuItemSub}>BIEN occurrence records &amp; range maps for vascular plants of the Americas</div>
+                                    </a>
+                                    <div style={styles.exploreMenuSeparator} />
+                                    <a
+                                        href="https://benquist.shinyapps.io/bien-traits-shinyapp/"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{
+                                            ...styles.exploreMenuItem,
+                                            backgroundColor: hoveredExplore === 'traits' ? '#f0fff0' : 'transparent',
+                                        }}
+                                        onMouseEnter={() => setHoveredExplore('traits')}
+                                        onMouseLeave={() => setHoveredExplore(null)}
+                                    >
+                                        <div style={styles.exploreMenuItemLabel}>Traits Explorer (Beta)</div>
+                                        <div style={styles.exploreMenuItemSub}>BIEN functional trait records for vascular plants of the Americas</div>
+                                    </a>
+                                    <div style={styles.exploreMenuFooter}>Hosted externally on shinyapps.io</div>
                                 </div>
                             )}
                         </div>
@@ -1039,6 +1092,55 @@ const styles = {
         fontFamily: 'Arial, sans-serif',
         borderRadius: '5px',
         transition: 'background-color 0.3s ease',
+    },
+    exploreIcon: {
+        fontSize: '22px',
+        cursor: 'pointer',
+        flexShrink: 0,
+        transition: 'color 0.3s ease',
+    },
+    exploreMenu: {
+        position: 'absolute',
+        top: '40px',
+        right: '0',
+        zIndex: 3,
+        backgroundColor: 'rgba(255, 255, 255, 0.97)',
+        padding: '10px',
+        borderRadius: '10px',
+        boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
+        display: 'flex',
+        flexDirection: 'column',
+        fontFamily: 'Arial, sans-serif',
+        width: '280px',
+    },
+    exploreMenuItem: {
+        display: 'block',
+        padding: '10px 12px',
+        textDecoration: 'none',
+        borderRadius: '5px',
+        transition: 'background-color 0.2s ease',
+    },
+    exploreMenuItemLabel: {
+        fontSize: '14px',
+        fontWeight: '500',
+        color: '#1a1a1a',
+    },
+    exploreMenuItemSub: {
+        fontSize: '12px',
+        color: '#666',
+        marginTop: '3px',
+    },
+    exploreMenuSeparator: {
+        height: '1px',
+        backgroundColor: '#e0e0e0',
+        margin: '4px 0',
+    },
+    exploreMenuFooter: {
+        marginTop: '8px',
+        fontSize: '11px',
+        color: '#999',
+        textAlign: 'center',
+        fontStyle: 'italic',
     },
     '@media (max-width: 768px)': {
         searchContainer: {
