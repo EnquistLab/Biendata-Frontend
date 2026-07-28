@@ -4,7 +4,10 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import * as turf from '@turf/turf';
 import { FaSearch, FaDownload, FaUserCircle, FaCogs, FaCompass } from 'react-icons/fa';
 
-mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
+const MAPBOX_ACCESS_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
+if (MAPBOX_ACCESS_TOKEN) {
+    mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
+}
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://mint-pheasant.nceas.ucsb.edu:5775';
 
@@ -27,6 +30,8 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
     const [hoveredService, setHoveredService] = useState(null);
     const [showExploreMenu, setShowExploreMenu] = useState(false);
     const [hoveredExplore, setHoveredExplore] = useState(null);
+    const [hoveredProfile, setHoveredProfile] = useState(null);
+    const [mapInitError, setMapInitError] = useState('');
 
     // Helper function to format species name for SQL
     const formatSpeciesForSQL = (name) => {
@@ -264,6 +269,12 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
     // Initialize the map
     useEffect(() => {
         if (map.current) return;
+
+        if (!MAPBOX_ACCESS_TOKEN) {
+            setMapInitError('Map preview is disabled locally because NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN is not set. Menu and link updates can still be reviewed.');
+            return;
+        }
+
         map.current = new mapboxgl.Map({
             container: mapContainer.current,
             style: 'mapbox://styles/mapbox/outdoors-v11',
@@ -372,7 +383,7 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
         watermarkContainer.className = 'mapboxgl-ctrl mapboxgl-ctrl-watermark';
 
         watermarkContainer.onclick = () => {
-            window.open('https://bien.nceas.ucsb.edu/bien/biendata/bien-3/#bien3org', '_blank');
+            window.open('https://bien.nceas.ucsb.edu/bien/', '_blank');
         };
 
         const img = document.createElement('img');
@@ -628,6 +639,22 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
     return (
         <div style={styles.mapContainer}>
             <div ref={mapContainer} style={styles.map} />
+            {mapInitError && (
+                <>
+                    <div style={styles.mapWarningBanner}>
+                        {mapInitError}
+                    </div>
+                    <a
+                        href="https://bien.nceas.ucsb.edu/bien/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={styles.mapFallbackLogoLink}
+                        aria-label="Open BIEN website"
+                    >
+                        <img src="/bien.png" alt="BIEN Logo" style={styles.mapFallbackLogoImage} />
+                    </a>
+                </>
+            )}
             {/* Search and Layer Controls */}
             <form onSubmit={handleSearchSubmit} style={styles.searchContainer}>
                 <div style={styles.searchWrapper}>
@@ -744,7 +771,7 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
                                         rel="noopener noreferrer"
                                         style={{
                                             ...styles.exploreMenuItem,
-                                            backgroundColor: hoveredExplore === 'species' ? '#f0fff0' : 'transparent',
+                                            backgroundColor: hoveredExplore === 'species' ? '#6A5ACD' : '#228B22',
                                         }}
                                         onMouseEnter={() => setHoveredExplore('species')}
                                         onMouseLeave={() => setHoveredExplore(null)}
@@ -759,7 +786,7 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
                                         rel="noopener noreferrer"
                                         style={{
                                             ...styles.exploreMenuItem,
-                                            backgroundColor: hoveredExplore === 'traits' ? '#f0fff0' : 'transparent',
+                                            backgroundColor: hoveredExplore === 'traits' ? '#6A5ACD' : '#228B22',
                                         }}
                                         onMouseEnter={() => setHoveredExplore('traits')}
                                         onMouseLeave={() => setHoveredExplore(null)}
@@ -785,9 +812,10 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
                             {showServicesMenu && (
                                 <div style={styles.servicesMenu}>
                                     <button
+                                        type="button"
                                         style={{
                                             ...styles.servicesMenuItem,
-                                            backgroundColor: hoveredService === 'taxonomic' ? '#f0f0f0' : 'transparent',
+                                            backgroundColor: hoveredService === 'taxonomic' ? '#6A5ACD' : '#228B22',
                                         }}
                                         onClick={() => handleServiceLinkClick('https://tnrs.biendata.org')}
                                         onMouseEnter={() => setHoveredService('taxonomic')}
@@ -796,9 +824,10 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
                                         Taxonomic Name Resolution Service
                                     </button>
                                     <button
+                                        type="button"
                                         style={{
                                             ...styles.servicesMenuItem,
-                                            backgroundColor: hoveredService === 'geographic' ? '#f0f0f0' : 'transparent',
+                                            backgroundColor: hoveredService === 'geographic' ? '#6A5ACD' : '#228B22',
                                         }}
                                         onClick={() => handleServiceLinkClick('https://gnrs.biendata.org')}
                                         onMouseEnter={() => setHoveredService('geographic')}
@@ -807,9 +836,10 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
                                         Geographic Name Resolution Service
                                     </button>
                                     <button
+                                        type="button"
                                         style={{
                                             ...styles.servicesMenuItem,
-                                            backgroundColor: hoveredService === 'native' ? '#f0f0f0' : 'transparent',
+                                            backgroundColor: hoveredService === 'native' ? '#6A5ACD' : '#228B22',
                                         }}
                                         onClick={() => handleServiceLinkClick('https://nsr.biendata.org')}
                                         onMouseEnter={() => setHoveredService('native')}
@@ -818,9 +848,10 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
                                         Native Species Resolver
                                     </button>
                                     <button
+                                        type="button"
                                         style={{
                                             ...styles.servicesMenuItem,
-                                            backgroundColor: hoveredService === 'geocoordinate' ? '#f0f0f0' : 'transparent',
+                                            backgroundColor: hoveredService === 'geocoordinate' ? '#6A5ACD' : '#228B22',
                                         }}
                                         onClick={() => handleServiceLinkClick('https://gvs.biendata.org')}
                                         onMouseEnter={() => setHoveredService('geocoordinate')}
@@ -846,17 +877,27 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
                                 <div style={styles.profileMenu}>
                                     <a
                                         href="https://bien.nceas.ucsb.edu/bien/"
-                                        style={styles.profileMenuItem}
+                                        style={{
+                                            ...styles.profileMenuItem,
+                                            backgroundColor: hoveredProfile === 'bien' ? '#6A5ACD' : '#228B22',
+                                        }}
                                         target="_blank"
                                         rel="noopener noreferrer"
+                                        onMouseEnter={() => setHoveredProfile('bien')}
+                                        onMouseLeave={() => setHoveredProfile(null)}
                                     >
                                         BIEN
                                     </a>
                                     <a
-                                        href="https://bien.nceas.ucsb.edu/bien/biendata/bien-4/"
-                                        style={styles.profileMenuItem}
+                                        href="https://bien.nceas.ucsb.edu/bien/bien-overview/"
+                                        style={{
+                                            ...styles.profileMenuItem,
+                                            backgroundColor: hoveredProfile === 'about' ? '#6A5ACD' : '#228B22',
+                                        }}
                                         target="_blank"
                                         rel="noopener noreferrer"
+                                        onMouseEnter={() => setHoveredProfile('about')}
+                                        onMouseLeave={() => setHoveredProfile(null)}
                                     >
                                         About
                                     </a>
@@ -898,6 +939,37 @@ const styles = {
         left: 0,
         width: '100%',
         height: '100%',
+        backgroundColor: '#f3f8f1',
+    },
+    mapWarningBanner: {
+        position: 'absolute',
+        top: '86px',
+        left: '20px',
+        right: '20px',
+        zIndex: 4,
+        backgroundColor: '#eaf6e6',
+        color: '#1f4d1f',
+        border: '1px solid #b5d7b5',
+        borderRadius: '8px',
+        padding: '10px 12px',
+        fontSize: '13px',
+        fontFamily: 'Arial, sans-serif',
+    },
+    mapFallbackLogoLink: {
+        position: 'absolute',
+        right: '16px',
+        bottom: '16px',
+        zIndex: 4,
+        display: 'inline-flex',
+        padding: '8px',
+        borderRadius: '10px',
+        backgroundColor: 'rgba(255, 255, 255, 0.92)',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+    },
+    mapFallbackLogoImage: {
+        width: '130px',
+        height: 'auto',
+        display: 'block',
     },
     searchContainer: {
         position: 'absolute',
@@ -1002,11 +1074,14 @@ const styles = {
     },
     profileMenuItem: {
         padding: '10px 15px',
-        color: '#333',
+        color: '#fff',
         textDecoration: 'none',
-        fontSize: '16px',
+        fontSize: '14px',
         cursor: 'pointer',
-        borderBottom: '1px solid #eee',
+        borderBottom: 'none',
+        borderRadius: '5px',
+        marginBottom: '5px',
+        transition: 'background-color 0.3s ease',
         fontFamily: 'Arial, sans-serif',
     },
     suggestionsList: {
@@ -1084,10 +1159,10 @@ const styles = {
         padding: '10px 15px',
         marginBottom: '5px',
         border: 'none',
-        backgroundColor: 'transparent',
+        backgroundColor: '#228B22',
         textAlign: 'left',
         cursor: 'pointer',
-        color: '#333',
+        color: '#fff',
         fontSize: '14px',
         fontFamily: 'Arial, sans-serif',
         borderRadius: '5px',
@@ -1118,16 +1193,17 @@ const styles = {
         padding: '10px 12px',
         textDecoration: 'none',
         borderRadius: '5px',
-        transition: 'background-color 0.2s ease',
+        transition: 'background-color 0.3s ease',
+        marginBottom: '5px',
     },
     exploreMenuItemLabel: {
         fontSize: '14px',
         fontWeight: '500',
-        color: '#1a1a1a',
+        color: '#fff',
     },
     exploreMenuItemSub: {
         fontSize: '12px',
-        color: '#666',
+        color: '#e7f6e7',
         marginTop: '3px',
     },
     exploreMenuSeparator: {
