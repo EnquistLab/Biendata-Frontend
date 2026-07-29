@@ -777,7 +777,7 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
                                         onMouseLeave={() => setHoveredExplore(null)}
                                     >
                                         <div style={styles.exploreMenuItemLabel}>Species Explorer (Beta)</div>
-                                        <div style={styles.exploreMenuItemSub}>BIEN occurrence records &amp; range maps for vascular plants of the Americas</div>
+                                        <div style={styles.exploreMenuItemSub}>BIEN occurrence records &amp; range maps for vascular plants</div>
                                     </a>
                                     <div style={styles.exploreMenuSeparator} />
                                     <a
@@ -792,7 +792,7 @@ const Map = ({ initialCenter, visibilitySettings, opacitySettings }) => {
                                         onMouseLeave={() => setHoveredExplore(null)}
                                     >
                                         <div style={styles.exploreMenuItemLabel}>Traits Explorer (Beta)</div>
-                                        <div style={styles.exploreMenuItemSub}>BIEN functional trait records for vascular plants of the Americas</div>
+                                        <div style={styles.exploreMenuItemSub}>BIEN functional trait records for vascular plants</div>
                                     </a>
                                     <div style={styles.exploreMenuFooter}>Hosted externally on shinyapps.io</div>
                                 </div>
